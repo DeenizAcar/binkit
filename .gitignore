@@ -1,0 +1,53 @@
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.iml
+
+# --- Flutter / Dart ---
+app/.dart_tool/
+app/.packages
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/build/
+app/.pub-cache/
+app/.pub/
+app/android/.gradle/
+app/android/local.properties
+app/android/key.properties
+app/android/app/*.jks
+app/android/app/*.keystore
+app/ios/Pods/
+app/ios/.symlinks/
+
+# --- Python / ML ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Datasets and training outputs never go into git.
+# (Stanford Cars / CompCars are non-commercial: local experiments only.)
+ml/data/
+ml/datasets/
+ml/runs/
+ml/checkpoints/
+ml/exports/
+*.h5
+*.keras
+*.ckpt
+*.zip
+*.tar
+*.tar.gz
+
+# Raw camera captures must never be stored (privacy rule).
+captures/
+*.raw
+
+# --- Secrets ---
+.env
+.env.*
+.claude/settings.local.json
