@@ -1,0 +1,68 @@
+# Datasets and base models: options (research 2026-11-25)
+
+Rules (CLAUDE.md): shipped models may only use data and weights that allow commercial use;
+no AGPL/GPL; no scraping against a site's terms. Uploader-assigned licenses on Kaggle/Roboflow
+are not trusted unless image provenance is clear.
+
+## 1. Plate detector (location only, no OCR)
+
+### Data
+
+| Source | License | Size / fit | Verdict |
+|---|---|---|---|
+| **Open Images V7**, class `Vehicle registration plate` | Annotations CC BY 4.0 (Google); images *listed as* CC BY 2.0 (Flickr, no per-image warranty) | Thousands of plate boxes, mostly US/EU street & car photos | **Recommended base.** Needs attribution. Download via the official `openimages/dataset` downloader or FiftyOne (Apache-2.0). |
+| Roboflow "License Plates (US-EU)" | Annotations CC BY 4.0, images = Open Images subset (CC BY 2.0) | 350 images | Same source as above; adds nothing new. |
+| Kaggle "Car License Plate Detection" (andrewmvd) | Listed CC0, provenance unclear | 433 images | Skip (provenance). |
+| HF "france-license-plate", "Global License Plate Dataset", TrainingDataPro | CC BY-NC-ND | — | **Not allowed** (non-commercial). |
+| Own photos (Turkey, other regions) | Ours | Small, but covers regions Open Images lacks | Add later to cover TR/other plate shapes. Faces must be blurred before storing. |
+
+### Model
+
+| Option | License | Notes |
+|---|---|---|
+| **SSD MobileNet V2 FPNLite 320** (TF Object Detection API, COCO-pretrained) | Apache-2.0 | **Recommended.** TFLite export includes NMS and gives `boxes, classes, scores, count`, exactly the app's 4-output contract. Risk: the TF OD API is old; Colab needs pinned versions. |
+| YOLOX-Nano / Tiny (Megvii) | Apache-2.0 | Fallback. Export path ONNX → onnx2tf (MIT) → TFLite; NMS must be added in Dart. |
+| Ultralytics YOLOv5/v8/v11, KerasCV YOLOV8 presets (ported weights) | AGPL / derived | **Not allowed.** |
+
+## 2. Brand classifier (~30–40 brands)
+
+No large, cleanly licensed car-make dataset exists. Every big one is non-commercial or has
+unclear image rights.
+
+| Source | License | Verdict |
+|---|---|---|
+| Stanford Cars, CompCars | Non-commercial | **Local baseline only**, never in a shipped model. |
+| VMMRdb | No license stated; images gathered from websites | Skip. |
+| Kaggle "Car make, model, and generation"; HF DrBimmer/vehicle-classification | CC BY-NC 4.0 | **Not allowed.** |
+| Roboflow "Categorize car brands" (18 classes) | Listed CC BY 4.0, image provenance unclear | Skip, or eval-only. |
+| **Wikimedia Commons**, categories per manufacturer (e.g. `Category:Toyota automobiles`) | Per image: PD / CC0 / CC BY / CC BY-SA | **Recommended main source.** Fetched via the official MediaWiki API (allowed, with User-Agent + rate limits), filtered by license, attribution list kept per image. Needs cleaning (interiors, logos, toy cars). |
+| **Own photos** (street, parking lots) | Ours | **Recommended supplement**, especially for brands common in TR/regions where Commons is thin. Plates and faces masked before storing. |
+| VehiclesDB (CC BY 4.0) | Text data only (makes/models) | Useful for the label list and as a price/market reference, not for images. |
+
+### Model
+
+| Option | License | Notes |
+|---|---|---|
+| **EfficientNet-Lite0** or **MobileNetV3-Large** (Keras Applications), fine-tuned | Code + weights Apache-2.0 | **Recommended.** Fast on phones, int8-friendly. The ImageNet pretraining is a known grey area: ImageNet's own terms are non-commercial research, but ImageNet-pretrained weights are used commercially industry-wide. |
+
+## Open decisions
+
+1. **Wikimedia CC BY-SA images:** using ShareAlike images to train weights is legally unsettled.
+   Safest: use only PD / CC0 / CC BY (fewer images).
+2. **ImageNet-pretrained backbone:** accept the industry-standard grey area, or not.
+3. **Attribution:** Open Images and CC BY images require credit, so the app gets a "Credits / Licenses" screen
+   (static text, no network; does not affect the Data Safety declaration).
+
+## Sources
+
+- Open Images annotations/images license: https://www.github.com/openimages/dataset/blob/main/READMEV2.md
+- Roboflow License Plates (Open Images subset): https://public.roboflow.com/object-detection/license-plates-us-eu
+- Kaggle Car License Plate Detection: https://www.kaggle.com/datasets/andrewmvd/car-plate-detection
+- HF France plates (CC BY-NC-ND): https://huggingface.co/datasets/UniDataPro/france-license-plate-dataset/blob/main/README.md
+- Global License Plate Dataset: https://www.researchgate.net/publication/380731020_Global_License_Plate_Dataset
+- VMMRdb: https://github.com/faezetta/VMMRdb
+- Car make, model, and generation (CC BY-NC): https://www.kaggle.com/datasets/riotulab/car-make-model-and-generation
+- Roboflow Categorize car brands: https://universe.roboflow.com/g3-32st4/categorize-car-brands
+- VehiclesDB: https://github.com/vehiclesdb/vehiclesdb
+- TF OD API FPNLite config: https://codeclimate.com/github/tensorflow/models/research/object_detection/configs/tf2/ssd_mobilenet_v2_fpnlite_320x320_coco17_tpu-8.config/source
+- TFLite object detection (TF blog): https://blog.tensorflow.org/2021/06/easier-object-detection-on-mobile-with-tf-lite.html
