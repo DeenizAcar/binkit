@@ -14,9 +14,7 @@ from __future__ import annotations
 
 import argparse
 import csv
-import os
 import shutil
-import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -24,20 +22,13 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from tflite_utils import load_interpreter, onnx_to_tflite  # noqa: E402
+
 REPO = Path(__file__).resolve().parents[2]
 RUNS = REPO / "ml" / "runs" / "plate"
 DATA = REPO / "ml" / "data" / "openimages_plates"
 APP_MODEL = REPO / "app" / "assets" / "models" / "plate_detector.tflite"
-
-
-def load_interpreter(path: Path):
-    try:
-        from ai_edge_litert.interpreter import Interpreter
-    except ImportError:
-        from tensorflow.lite import Interpreter  # type: ignore
-    interp = Interpreter(model_path=str(path))
-    interp.allocate_tensors()
-    return interp
 
 
 def run(interp, image_nhwc: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -118,26 +109,8 @@ def main() -> int:
     p.add_argument("--install", action="store_true", help="copy float16 model into the app")
     args = p.parse_args()
 
-    out_dir = RUNS / "tflite"
-    if out_dir.exists():
-        shutil.rmtree(out_dir)
-    # onnx2tf wants 20 sample images for its internal checks and otherwise
-    # downloads them from the internet; build them from our own data instead.
-    sample_file = RUNS / "calibration_image_sample_data_20x128x128x3_float32.npy"
-    if not sample_file.exists():
-        imgs = sorted((DATA / "validation" / "images").glob("*.jpg"))[:20]
-        arr = np.stack([np.asarray(Image.open(i).convert("RGB").resize((128, 128)), np.float32) / 255.0
-                        for i in imgs])
-        np.save(sample_file, arr)
-    subprocess.run([
-        sys.executable, "-m", "onnx2tf",
-        "-i", str(args.onnx.resolve()), "-o", str(out_dir),
-        "-osd",           # keep a SavedModel too
-    ], check=True, cwd=RUNS, env={**os.environ,  # so onnx2tf finds the onnxsim CLI
-                                  "PATH": str(Path(sys.executable).parent) + os.pathsep + os.environ["PATH"]})
-
-    f32 = next(out_dir.glob("*_float32.tflite"))
-    f16 = next(out_dir.glob("*_float16.tflite"))
+    samples = sorted((DATA / "validation" / "images").glob("*.jpg"))
+    f32, f16 = onnx_to_tflite(args.onnx, RUNS, samples)
     ref = np.load(args.onnx.with_suffix(".reference.npz"))
     image_nhwc = np.transpose(ref["image"], (0, 2, 3, 1))
     for path in (f32, f16):

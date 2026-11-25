@@ -79,6 +79,11 @@ class Commons:
                     time.sleep(int(e.headers.get("Retry-After", 5 * (attempt + 1))))
                     continue
                 raise
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+                # Network drop (e.g. DNS failure): wait and retry.
+                print(f"  network error ({e}), retrying", file=sys.stderr)
+                time.sleep(30 * (attempt + 1))
+                continue
             if data.get("error", {}).get("code") == "maxlag":
                 time.sleep(5 * (attempt + 1))
                 continue
@@ -214,9 +219,9 @@ def download(url: str, target: Path, ua: str) -> bool:
                 continue
             print(f"  download failed ({e.code}): pageid {target.stem}", file=sys.stderr)
             return False
-        except urllib.error.URLError as e:
-            print(f"  download failed ({e.reason}): pageid {target.stem}", file=sys.stderr)
-            return False
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            print(f"  network error ({e}), retrying pageid {target.stem}", file=sys.stderr)
+            time.sleep(30 * (attempt + 1))
     return False
 
 

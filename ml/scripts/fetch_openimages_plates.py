@@ -19,6 +19,8 @@ import argparse
 import csv
 import io
 import sys
+import time
+import urllib.error
 import urllib.request
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -58,9 +60,22 @@ def fetch_image(split: str, image_id: str, target: Path) -> bool:
     if target.exists():
         return True
     req = urllib.request.Request(IMAGE_URL.format(split=split, image_id=image_id), headers=UA)
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                data = r.read()
+            break
+        except urllib.error.HTTPError as e:
+            print(f"  skip {image_id}: HTTP {e.code}", file=sys.stderr)
+            return False
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            # Network drop (e.g. DNS failure): wait and retry.
+            print(f"  retry {image_id}: {e}", file=sys.stderr)
+            time.sleep(20 * (attempt + 1))
+    else:
+        print(f"  skip {image_id}: network kept failing", file=sys.stderr)
+        return False
     try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            data = r.read()
         img = Image.open(io.BytesIO(data)).convert("RGB")
         img.thumbnail((MAX_SIDE, MAX_SIDE))
         img.save(target, "JPEG", quality=90)
