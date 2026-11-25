@@ -35,6 +35,7 @@ Bink It, telefon kamerasıyla bir arabayı tarayıp markasını (ileride modelin
   - `tflite_flutter`: cihazda çıkarım
   - `image`: kırpma, ölçekleme, bulanıklaştırma
 - **ML:** Python, TensorFlow/Keras, Colab notebook'ları → `.tflite` çıktısı (int8 veya float16 quantization)
+  - Plaka tespiti: PyTorch (torchvision SSDLite) yerel GPU'da eğitilir, ai-edge-torch ile `.tflite`'a çevrilir (bkz. `ml/DATASETS.md`)
 - **Veri:** Fiyat aralıkları uygulama içindeki statik JSON'da tutulur (API yok)
 
 ## Klasör yapısı
