@@ -160,13 +160,16 @@ def main() -> int:
     p.add_argument("--lr", type=float, default=0.02)
     p.add_argument("--workers", type=int, default=6)
     p.add_argument("--eval-every", type=int, default=2)
+    p.add_argument("--train-split", default="train", help="for smoke tests only")
+    p.add_argument("--out", type=Path, default=RUNS)
     args = p.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}", flush=True)
-    RUNS.mkdir(parents=True, exist_ok=True)
+    runs = args.out
+    runs.mkdir(parents=True, exist_ok=True)
 
-    train_ds = PlateDataset("train", train=True)
+    train_ds = PlateDataset(args.train_split, train=True)
     val_ds = PlateDataset("validation", train=False)
     print(f"train {len(train_ds)} images, validation {len(val_ds)} images", flush=True)
     train_dl = DataLoader(train_ds, args.batch, shuffle=True, num_workers=args.workers,
@@ -183,7 +186,7 @@ def main() -> int:
         else 0.5 * (1 + math.cos(math.pi * (s - warmup) / max(1, steps - warmup))))
 
     best_ap = -1.0
-    log_path = RUNS / "metrics.csv"
+    log_path = runs / "metrics.csv"
     with log_path.open("w", newline="") as f:
         csv.writer(f).writerow(["epoch", "loss", "val_ap50", "val_recall@0.4", "seconds"])
 
@@ -214,8 +217,8 @@ def main() -> int:
             ap, rec = evaluate(model, val_dl, device)
             if ap > best_ap:
                 best_ap = ap
-                torch.save(model.state_dict(), RUNS / "best.pt")
-        torch.save(model.state_dict(), RUNS / "last.pt")
+                torch.save(model.state_dict(), runs / "best.pt")
+        torch.save(model.state_dict(), runs / "last.pt")
         secs = time.time() - t0
         print(f"epoch {epoch:3}/{args.epochs}  loss {mean_loss:.4f}  val AP50 {ap:.4f}  "
               f"recall@0.4 {rec:.4f}  {secs:.0f}s", flush=True)
