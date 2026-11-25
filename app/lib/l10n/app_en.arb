@@ -1,0 +1,29 @@
+{
+  "@@locale": "en",
+  "appTitle": "Bink It",
+  "scanButton": "Scan",
+  "@scanButton": { "description": "Main shutter button that scans the car in view." },
+  "scanning": "Scanning…",
+  "loadingCamera": "Starting camera…",
+  "cameraPermissionDenied": "Camera access is needed to scan cars. Allow it in your phone's settings.",
+  "cameraUnavailable": "Camera not available on this device.",
+  "tryAgain": "Try again",
+  "aimHint": "Fit the whole car in the frame",
+  "plateTooLarge": "Capture the whole car",
+  "plateTooLargeHint": "The license plate takes up too much of the frame. Step back.",
+  "uncertain": "Not sure, try again",
+  "uncertainHint": "Try a clearer angle with the whole car in view.",
+  "modelsUnavailable": "Recognition models aren't installed yet.",
+  "scanFailed": "Something went wrong. Try again.",
+  "resultTitle": "Scan result",
+  "confidence": "{percent}% match",
+  "@confidence": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "otherGuesses": "Other guesses",
+  "estimatedValue": "Estimated value",
+  "priceUnavailable": "No price data yet",
+  "priceDisclaimer": "Rough range for typical used cars. Not an appraisal.",
+  "scanAgain": "Scan again",
+  "privacyNote": "Plates are masked on your device. Nothing is saved or sent."
+}
