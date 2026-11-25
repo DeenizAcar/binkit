@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bink It — test build</title>
+<meta name="description" content="Bink It test build for Android: on-device car brand recognition with license plate masking.">
+<style>
+  :root { --bg:#0d0f12; --card:#171a1f; --text:#eef1f4; --muted:#9aa3ad; --accent:#2ee6a6; --accent-text:#05261b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:560px; margin:0 auto; padding:40px 16px 56px; }
+  h1 { font-size:2.2rem; letter-spacing:.04em; margin:0 0 4px; font-weight:900; }
+  .tag { color:var(--muted); margin:0 0 28px; }
+  .card { background:var(--card); border-radius:16px; padding:20px; margin-bottom:16px; }
+  .btn { display:block; text-align:center; background:var(--accent); color:var(--accent-text); font-weight:800;
+         font-size:1.1rem; padding:16px; border-radius:12px; text-decoration:none; letter-spacing:.03em; }
+  .meta { color:var(--muted); font-size:.85rem; margin-top:10px; text-align:center; word-break:break-all; }
+  h2 { font-size:1rem; margin:0 0 8px; }
+  ol, ul { margin:0; padding-left:20px; }
+  li { margin:4px 0; }
+  .muted { color:var(--muted); font-size:.9rem; }
+  hr { border:0; border-top:1px solid #262b33; margin:28px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>BINK IT</h1>
+  <p class="tag">Test build · Android · <span lang="tr">Test sürümü</span></p>
+
+  <div class="card">
+    <a class="btn" href="bink-it.apk" download>Download APK · APK'yı indir</a>
+    <p class="meta">Version 1.0.0+1+3dd47b7 · 51 MB · 2026-11-25<br>SHA-256 b771938f74c4ec861cc976685ba6408344c9e4c75c20e516b52e1bb5c41caa79</p>
+  </div>
+
+  <div class="card">
+    <h2>Install · Kurulum</h2>
+    <ol>
+      <li>Download the APK on your Android phone. · APK'yı telefonda indir.</li>
+      <li>Open it and allow "Install unknown apps" for your browser when asked. · Sorulunca tarayıcına "Bilinmeyen uygulamaları yükle" izni ver.</li>
+      <li>Updating: install the new APK over the old one. · Güncellemek için yenisini eskisinin üstüne kur.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Status · Durum</h2>
+    <p class="muted">First test build: the camera and screens work, but the recognition models are not included yet, so scanning says &#x27;models not installed&#x27;. A build with models follows. · İlk test sürümü: kamera ve ekranlar çalışıyor, ama tanıma modelleri henüz yok; tarama &#x27;modeller yüklü değil&#x27; der. Modelli sürüm ardından gelecek.</p>
+  </div>
+
+  <div class="card">
+    <h2>Privacy · Gizlilik</h2>
+    <ul class="muted">
+      <li>All recognition runs on the phone. No account, no server, no analytics. · Tüm tanıma telefonda çalışır; hesap, sunucu, analiz yok.</li>
+      <li>License plates are never read; they are painted black before recognition. · Plakalar okunmaz; tanımadan önce siyaha boyanır.</li>
+      <li>Camera frames are never saved or sent. · Kamera görüntüleri kaydedilmez, gönderilmez.</li>
+    </ul>
+  </div>
+
+  <hr>
+  <p class="muted">This is an unsigned-for-store test build (debug signing key), not the Play Store release.
+  · Bu, Play Store sürümü değil; test anahtarıyla imzalı bir deneme sürümüdür.</p>
+</main>
+</body>
+</html>
