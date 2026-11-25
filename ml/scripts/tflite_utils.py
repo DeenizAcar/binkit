@@ -28,6 +28,7 @@ def onnx_to_tflite(onnx_path: Path, work_dir: Path, sample_images: list[Path]) -
     onnx2tf wants 20 sample images for its internal checks and would otherwise
     download them from the internet, so they are built from our own data.
     """
+    work_dir = work_dir.resolve()  # onnx2tf runs with cwd=work_dir
     out_dir = work_dir / "tflite"
     if out_dir.exists():
         shutil.rmtree(out_dir)
