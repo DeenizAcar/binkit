@@ -69,7 +69,7 @@ class Commons:
     def get(self, params: dict) -> dict:
         params = {**params, "format": "json", "formatversion": "2", "maxlag": "5"}
         url = API + "?" + urllib.parse.urlencode(params)
-        for attempt in range(6):
+        for attempt in range(10):
             req = urllib.request.Request(url, headers={"User-Agent": self.ua})
             try:
                 with urllib.request.urlopen(req, timeout=60) as r:
@@ -194,6 +194,14 @@ def collect(api: Commons, category: str, limit: int, other_brands: list[str], st
             return
 
 
+def safe_collect(api, category, limit, others, stats, label):
+    """collect(), but an API outage only ends this brand; the next run resumes it."""
+    try:
+        yield from collect(api, category, limit, others, stats)
+    except RuntimeError as e:
+        print(f"{label}: stopped early ({e}); rerun to resume", file=sys.stderr, flush=True)
+
+
 def cmd_check(api: Commons, args) -> int:
     missing = 0
     for label, category in read_brands(args.only):
@@ -256,7 +264,7 @@ def cmd_fetch(api: Commons, args) -> int:
         licenses: dict[str, int] = {}
         kept = 0
         brand_dir = OUT_DIR / slug(label)
-        for page, info, lic in collect(api, category, args.per_brand, others, stats):
+        for page, info, lic in safe_collect(api, category, args.per_brand, others, stats, label):
             pid = page["pageid"]
             if pid in owner and owner[pid] != label:
                 conflicts.add(pid)  # same photo under two brands: ambiguous
