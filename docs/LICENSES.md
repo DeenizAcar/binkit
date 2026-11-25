@@ -29,7 +29,18 @@ Transitive dependencies (checked 2026-11-25 from `pubspec.lock`): all BSD, MIT o
 
 | Model | Source | License | Used for |
 |---|---|---|---|
-| — | — | — | — |
+| SSDLite320-MobileNetV3-Large, COCO weights | torchvision (`SSDLite320_MobileNet_V3_Large_Weights.COCO_V1`) | BSD-3-Clause (torchvision); COCO annotations CC BY 4.0 | Starting point for the plate detector |
+
+## ML tooling (not shipped in the app)
+
+| Tool | License | Used for |
+|---|---|---|
+| PyTorch, torchvision | BSD-3-Clause | Plate detector training |
+| ONNX, ONNX Runtime | Apache-2.0 / MIT | Export format, checks |
+| onnx2tf | MIT | ONNX → TFLite conversion |
+| onnxsim, onnx-graphsurgeon, sng4onnx, simple_onnx_processing_tools | Apache-2.0 / MIT | Graph cleanup used by onnx2tf |
+| TensorFlow, tf-keras | Apache-2.0 | Conversion, TFLite interpreter |
+| Pillow | MIT-CMU (HPND) | Image loading |
 
 ## Datasets
 

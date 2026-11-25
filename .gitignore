@@ -26,6 +26,7 @@ app/ios/.symlinks/
 __pycache__/
 *.py[cod]
 .venv/
+.venv-*/
 venv/
 .ipynb_checkpoints/
 
@@ -53,4 +54,4 @@ captures/
 .claude/settings.local.json
 
 # Local fetch logs
-ml/fetch_log.txt
+ml/*_log.txt

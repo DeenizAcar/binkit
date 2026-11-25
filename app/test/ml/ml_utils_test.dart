@@ -61,4 +61,25 @@ void main() {
       expect(values[1], closeTo(1, 1e-9));
     });
   });
+
+  group('nonMaxSuppression', () {
+    PlateBox b(double l, double t, double r, double bo, double s) =>
+        PlateBox(left: l, top: t, right: r, bottom: bo, score: s);
+
+    test('keeps the best of overlapping boxes and distinct boxes', () {
+      final kept = nonMaxSuppression([
+        b(0.10, 0.10, 0.30, 0.20, 0.9),
+        b(0.11, 0.10, 0.31, 0.20, 0.8), // overlaps the first
+        b(0.60, 0.60, 0.80, 0.70, 0.7), // separate plate
+        b(0.40, 0.40, 0.50, 0.45, 0.05), // below threshold
+      ]);
+      expect(kept.map((k) => k.score), [0.9, 0.7]);
+    });
+
+    test('iou of identical boxes is 1, disjoint is 0', () {
+      final a = b(0, 0, 0.5, 0.5, 1);
+      expect(plateIou(a, a), closeTo(1, 1e-9));
+      expect(plateIou(a, b(0.6, 0.6, 0.9, 0.9, 1)), 0);
+    });
+  });
 }
