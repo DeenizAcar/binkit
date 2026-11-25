@@ -105,7 +105,7 @@ class Commons:
             "gsrlimit": "50",
             "prop": "imageinfo",
             "iiprop": "url|mime|extmetadata",
-            "iiurlwidth": "640",
+            "iiurlwidth": "500",  # a standard Wikimedia thumbnail size (w.wiki/GHai),
             "iiextmetadatafilter": "License|LicenseShortName|Artist",
         }):
             pages = data.get("query", {}).get("pages", [])
@@ -198,6 +198,37 @@ def cmd_check(api: Commons, args) -> int:
     return 1 if missing else 0
 
 
+def download(url: str, target: Path, ua: str) -> bool:
+    """Downloads one thumbnail, backing off on HTTP 429/503."""
+    for attempt in range(5):
+        req = urllib.request.Request(url, headers={"User-Agent": ua})
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                target.write_bytes(r.read())
+            return True
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 503):
+                wait = int(e.headers.get("Retry-After") or 60 * (attempt + 1))
+                print(f"  rate limited, waiting {wait}s", file=sys.stderr)
+                time.sleep(wait)
+                continue
+            print(f"  download failed ({e.code}): pageid {target.stem}", file=sys.stderr)
+            return False
+        except urllib.error.URLError as e:
+            print(f"  download failed ({e.reason}): pageid {target.stem}", file=sys.stderr)
+            return False
+    return False
+
+
+def write_manifest(path: Path, rows: dict[int, dict]) -> None:
+    tmp = path.with_suffix(".tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=MANIFEST_FIELDS)
+        w.writeheader()
+        w.writerows(sorted(rows.values(), key=lambda r: (r["brand"], int(r["pageid"]))))
+    tmp.replace(path)
+
+
 def cmd_fetch(api: Commons, args) -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     manifest_path = OUT_DIR / "manifest.csv"
@@ -211,6 +242,10 @@ def cmd_fetch(api: Commons, args) -> int:
 
     all_labels = [label for label, _ in read_brands(None)]
     for label, category in read_brands(args.only):
+        have = sum(1 for r in rows.values() if r["brand"] == label)
+        if not args.dry_run and have >= args.per_brand:
+            print(f"{label:15} already has {have}, skipping")
+            continue
         others = [b for b in all_labels if b.lower() != label.lower()]
         stats = {"seen": 0, "skipped": 0, "license_rejected": 0}
         licenses: dict[str, int] = {}
@@ -221,35 +256,33 @@ def cmd_fetch(api: Commons, args) -> int:
             if pid in owner and owner[pid] != label:
                 conflicts.add(pid)  # same photo under two brands: ambiguous
                 continue
+            if not args.dry_run and pid not in rows:
+                target = brand_dir / f"{pid}.jpg"
+                brand_dir.mkdir(parents=True, exist_ok=True)
+                # Files from an interrupted run are reused, not re-downloaded.
+                if not target.exists():
+                    if not download(info["thumburl"], target, api.ua):
+                        continue
+                    time.sleep(1)  # polite pace for upload.wikimedia.org
+                rows[pid] = {
+                    "brand": label,
+                    "pageid": pid,
+                    "title": page["title"],
+                    "author": clean_text(meta(info, "Artist")) or "Unknown",
+                    "license": lic,
+                    # Link by page id: file titles often contain plate numbers,
+                    # which must not be copied into the app.
+                    "page_url": f"https://commons.wikimedia.org/?curid={pid}",
+                    "file": str(target.relative_to(OUT_DIR)).replace("\\", "/"),
+                }
+                owner[pid] = label
             licenses[lic] = licenses.get(lic, 0) + 1
             kept += 1
-            if args.dry_run or pid in rows:
-                continue
-            target = brand_dir / f"{pid}.jpg"
-            brand_dir.mkdir(parents=True, exist_ok=True)
-            req = urllib.request.Request(info["thumburl"], headers={"User-Agent": api.ua})
-            try:
-                with urllib.request.urlopen(req, timeout=60) as r:
-                    target.write_bytes(r.read())
-            except urllib.error.URLError as e:
-                print(f"  download failed {page['title']}: {e}", file=sys.stderr)
-                continue
-            rows[pid] = {
-                "brand": label,
-                "pageid": pid,
-                "title": page["title"],
-                "author": clean_text(meta(info, "Artist")) or "Unknown",
-                "license": lic,
-                # Link by page id: file titles often contain plate numbers,
-                # which must not be copied into the app.
-                "page_url": f"https://commons.wikimedia.org/?curid={pid}",
-                "file": str(target.relative_to(OUT_DIR)).replace("\\", "/"),
-            }
-            owner[pid] = label
-            time.sleep(0.5)  # polite pace for upload.wikimedia.org
         top = ", ".join(f"{k}: {v}" for k, v in sorted(licenses.items(), key=lambda x: -x[1])[:4])
         print(f"{label:15} kept {kept:4}  (seen {stats['seen']}, skipped {stats['skipped']}, "
-              f"license-rejected {stats['license_rejected']})  [{top}]")
+              f"license-rejected {stats['license_rejected']})  [{top}]", flush=True)
+        if not args.dry_run:
+            write_manifest(manifest_path, rows)  # checkpoint after each brand
 
     for pid in conflicts:
         row = rows.pop(pid, None)
@@ -257,12 +290,8 @@ def cmd_fetch(api: Commons, args) -> int:
             (OUT_DIR / row["file"]).unlink(missing_ok=True)
     if conflicts:
         print(f"Dropped {len(conflicts)} photos that appear under more than one brand.")
-
     if not args.dry_run:
-        with manifest_path.open("w", encoding="utf-8", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=MANIFEST_FIELDS)
-            w.writeheader()
-            w.writerows(sorted(rows.values(), key=lambda r: (r["brand"], int(r["pageid"]))))
+        write_manifest(manifest_path, rows)
     return 0
 
 
