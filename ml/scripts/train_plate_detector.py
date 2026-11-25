@@ -162,6 +162,7 @@ def main() -> int:
     p.add_argument("--eval-every", type=int, default=2)
     p.add_argument("--train-split", default="train", help="for smoke tests only")
     p.add_argument("--out", type=Path, default=RUNS)
+    p.add_argument("--init", type=Path, help="continue from these weights (e.g. last.pt)")
     args = p.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -176,7 +177,11 @@ def main() -> int:
                           collate_fn=collate, persistent_workers=args.workers > 0, drop_last=True)
     val_dl = DataLoader(val_ds, 16, num_workers=args.workers, collate_fn=collate)
 
-    model = build_model().to(device)
+    model = build_model()
+    if args.init:
+        model.load_state_dict(torch.load(args.init, map_location="cpu"))
+        print(f"continuing from {args.init}", flush=True)
+    model = model.to(device)
     params = [p for p in model.parameters() if p.requires_grad]
     opt = torch.optim.SGD(params, lr=args.lr, momentum=0.9, weight_decay=4e-5)
     steps = args.epochs * len(train_dl)
