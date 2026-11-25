@@ -11,6 +11,8 @@ Usage (run from the repo root):
   python -I ml/scripts/fetch_commons.py credits
 
 Images go to ml/data/commons/<brand>/ (git-ignored) with a manifest.csv.
+Photos whose title names another brand in brands.tsv are skipped (e.g.
+Daihatsu or Subaru models that sit under Toyota's category tree).
 After manual cleaning (delete wrong images), `credits` writes
 app/assets/data/image_credits.txt for the photos that are still there.
 """
@@ -27,7 +29,6 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections import deque
 from pathlib import Path
 
 API = "https://commons.wikimedia.org/w/api.php"
@@ -48,13 +49,15 @@ FORBIDDEN = re.compile(r"\b(sa|nc|nd|gfdl|share ?alike|noncommercial|noderiv)", 
 
 # Subcategories / files that are not photos of whole cars.
 SKIP = re.compile(
-    r"interior|dashboard|steering|seat(s)? |engine|motor |logo|emblem|badge|"
-    r"wheel|rim|hubcap|tail ?light|head ?light|grille|key|brochure|advert|"
-    r"scale model|model car|toy|diecast|die-cast|lego|drawing|illustration|"
-    r"in art|patent|factory|plant|assembly|crash|accident|wreck|scrap|"
-    r"museum interior|racing|rally|race car|ambulance|police|taxi|"
-    r"trucks|buses|motorcycles|people with|license plate|number plate|"
-    r"registration plate|\.svg$|\.pdf$|\.tif",
+    r"\b("
+    r"interior|dashboard|steering wheel|seats?|engine|logo|emblem|badge|"
+    r"wheels?|rims?|hubcaps?|tail ?lights?|head ?lights?|grille|keys?|brochure|advert\w*|"
+    r"scale model|model car|toys?|diecast|die-cast|lego|drawing|illustration|"
+    r"patent|factory|assembly line|crash|accident|wreck|scrap\w*|"
+    r"racing|rally|race car|ambulance|police|taxi|"
+    r"trucks?|bus|buses|motorcycles?|license plate|number plate|registration plate"
+    r")\b"
+    r"|\.(svg|pdf|tiff?)$",
     re.I,
 )
 
@@ -93,6 +96,22 @@ class Commons:
                 return
             cont = data["continue"]
 
+    def search_files(self, query: str):
+        for data in self.paged({
+            "action": "query",
+            "generator": "search",
+            "gsrsearch": query,
+            "gsrnamespace": "6",
+            "gsrlimit": "50",
+            "prop": "imageinfo",
+            "iiprop": "url|mime|extmetadata",
+            "iiurlwidth": "640",
+            "iiextmetadatafilter": "License|LicenseShortName|Artist",
+        }):
+            pages = data.get("query", {}).get("pages", [])
+            yield from sorted(pages, key=lambda p: p.get("index", 0))
+            time.sleep(1)  # be gentle: at most ~1 API request per second
+
     def exists(self, category: str) -> int | None:
         data = self.get({
             "action": "query",
@@ -103,31 +122,6 @@ class Commons:
         if page.get("missing"):
             return None
         return page.get("categoryinfo", {}).get("size", 0)
-
-    def subcats(self, category: str):
-        for data in self.paged({
-            "action": "query",
-            "list": "categorymembers",
-            "cmtitle": f"Category:{category}",
-            "cmtype": "subcat",
-            "cmlimit": "500",
-        }):
-            for m in data["query"]["categorymembers"]:
-                yield m["title"].removeprefix("Category:")
-
-    def files(self, category: str):
-        for data in self.paged({
-            "action": "query",
-            "generator": "categorymembers",
-            "gcmtitle": f"Category:{category}",
-            "gcmtype": "file",
-            "gcmlimit": "50",
-            "prop": "imageinfo",
-            "iiprop": "url|mime|extmetadata",
-            "iiurlwidth": "640",
-            "iiextmetadatafilter": "License|LicenseShortName|Artist",
-        }):
-            yield from data.get("query", {}).get("pages", [])
 
 
 def meta(info: dict, key: str) -> str:
@@ -165,17 +159,22 @@ def read_brands(only: list[str] | None) -> list[tuple[str, str]]:
     return brands
 
 
-def collect(api: Commons, category: str, limit: int, max_depth: int, stats: dict):
-    """Breadth-first walk of a brand category; yields accepted file pages."""
-    queue = deque([(category, 0)])
-    seen_cats = {category}
+def collect(api: Commons, category: str, limit: int, other_brands: list[str], stats: dict):
+    """Yields accepted files using CirrusSearch: deepcategory + license filter.
+
+    One query per license class, so most rejected files never leave the API.
+    """
+    # Case-sensitive whole words, so "Mini" doesn't hit "minivan" or "SEAT" "seat".
+    other = (re.compile(r"\b(" + "|".join(re.escape(b) for b in other_brands) + r")\b")
+             if other_brands else None)
     found = 0
-    while queue and found < limit:
-        cat, depth = queue.popleft()
-        for page in api.files(cat):
+    for license_class in ("unrestricted", "attribution"):
+        query = f'deepcategory:"{category}" haslicense:{license_class} filemime:image/jpeg'
+        for page in api.search_files(query):
             info = (page.get("imageinfo") or [{}])[0]
             stats["seen"] += 1
-            if info.get("mime") != "image/jpeg" or SKIP.search(page["title"]):
+            title = page["title"]
+            if SKIP.search(title) or (other and other.search(title)):
                 stats["skipped"] += 1
                 continue
             lic = accepted_license(info)
@@ -186,11 +185,8 @@ def collect(api: Commons, category: str, limit: int, max_depth: int, stats: dict
             found += 1
             if found >= limit:
                 return
-        if depth < max_depth:
-            for sub in api.subcats(cat):
-                if sub not in seen_cats and not SKIP.search(sub):
-                    seen_cats.add(sub)
-                    queue.append((sub, depth + 1))
+        if found >= limit:
+            return
 
 
 def cmd_check(api: Commons, args) -> int:
@@ -213,12 +209,14 @@ def cmd_fetch(api: Commons, args) -> int:
     owner = {pid: r["brand"] for pid, r in rows.items()}
     conflicts: set[int] = set()
 
+    all_labels = [label for label, _ in read_brands(None)]
     for label, category in read_brands(args.only):
+        others = [b for b in all_labels if b.lower() != label.lower()]
         stats = {"seen": 0, "skipped": 0, "license_rejected": 0}
         licenses: dict[str, int] = {}
         kept = 0
         brand_dir = OUT_DIR / slug(label)
-        for page, info, lic in collect(api, category, args.per_brand, args.depth, stats):
+        for page, info, lic in collect(api, category, args.per_brand, others, stats):
             pid = page["pageid"]
             if pid in owner and owner[pid] != label:
                 conflicts.add(pid)  # same photo under two brands: ambiguous
@@ -242,11 +240,13 @@ def cmd_fetch(api: Commons, args) -> int:
                 "title": page["title"],
                 "author": clean_text(meta(info, "Artist")) or "Unknown",
                 "license": lic,
-                "page_url": info.get("descriptionurl", ""),
+                # Link by page id: file titles often contain plate numbers,
+                # which must not be copied into the app.
+                "page_url": f"https://commons.wikimedia.org/?curid={pid}",
                 "file": str(target.relative_to(OUT_DIR)).replace("\\", "/"),
             }
             owner[pid] = label
-            time.sleep(0.2)
+            time.sleep(0.5)  # polite pace for upload.wikimedia.org
         top = ", ".join(f"{k}: {v}" for k, v in sorted(licenses.items(), key=lambda x: -x[1])[:4])
         print(f"{label:15} kept {kept:4}  (seen {stats['seen']}, skipped {stats['skipped']}, "
               f"license-rejected {stats['license_rejected']})  [{top}]")
@@ -272,10 +272,11 @@ def cmd_credits(_api, _args) -> int:
         rows = [r for r in csv.DictReader(f) if (OUT_DIR / r["file"]).exists()]
     lines = [
         "# Photo credits for training images. Generated by ml/scripts/fetch_commons.py.",
-        "# Format: title | author | license | source URL",
+        "# Format: author | license | source URL",
+        "# File titles are left out on purpose: many contain license plate numbers.",
     ]
-    for r in sorted(rows, key=lambda r: r["title"].lower()):
-        lines.append(f"{r['title']} | {r['author']} | {r['license']} | {r['page_url']}")
+    for r in sorted(rows, key=lambda r: (r["author"].lower(), int(r["pageid"]))):
+        lines.append(f"{r['author']} | {r['license']} | {r['page_url']}")
     CREDITS_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Wrote {len(rows)} credits to {CREDITS_FILE.relative_to(REPO)}")
     return 0
@@ -286,7 +287,6 @@ def main() -> int:
     p.add_argument("command", choices=["check", "fetch", "credits"])
     p.add_argument("--only", nargs="*", help="brand labels to process")
     p.add_argument("--per-brand", type=int, default=400)
-    p.add_argument("--depth", type=int, default=4, help="max subcategory depth")
     p.add_argument("--dry-run", action="store_true", help="count only, download nothing")
     p.add_argument("--user-agent", default=DEFAULT_UA)
     args = p.parse_args()

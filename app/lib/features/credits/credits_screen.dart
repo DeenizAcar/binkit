@@ -6,25 +6,26 @@ import '../../l10n/app_localizations.dart';
 /// One attribution line from image_credits.txt.
 class PhotoCredit {
   const PhotoCredit({
-    required this.title,
     required this.author,
     required this.license,
     required this.url,
   });
 
-  final String title;
   final String author;
   final String license;
   final String url;
 }
 
-/// Parses `title | author | license | url` lines; `#` lines are comments.
+/// Parses `author | license | url` lines; `#` lines are comments.
+///
+/// File titles are deliberately not included: many Commons titles contain
+/// license plate numbers.
 List<PhotoCredit> parseCredits(String text) => [
       for (final line in text.split('\n'))
         if (line.trim().isNotEmpty && !line.trimLeft().startsWith('#'))
           if (line.split('|').map((s) => s.trim()).toList()
-              case [final title, final author, final license, final url])
-            PhotoCredit(title: title, author: author, license: license, url: url),
+              case [final author, final license, final url])
+            PhotoCredit(author: author, license: license, url: url),
     ];
 
 /// Static attributions. Reads only a bundled asset; no network.
@@ -84,7 +85,7 @@ class _CreditsScreenState extends State<CreditsScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: SelectableText(
-                      '${c.title} — ${c.author} (${c.license})\n${c.url}',
+                      '${c.author} (${c.license})\n${c.url}',
                       style: muted,
                     ),
                   ),

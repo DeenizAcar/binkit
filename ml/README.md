@@ -31,6 +31,19 @@ Input tensor: `[1, h, w, 3]`, type float32, uint8 or int8 (quantization params a
 
 Without both models the app fails closed: it never classifies an unmasked frame.
 
+**Train the classifier on plate-masked images.** In the app the classifier only ever sees frames
+whose plates are painted black, so training images must be masked the same way (with the plate
+detector, solid black, same margin) or train and inference data won't match.
+
+## Building the brand image set
+
+```
+python -I ml/scripts/fetch_commons.py check                       # verify Commons categories
+python -I ml/scripts/fetch_commons.py fetch --per-brand 400       # PD / CC0 / CC BY only
+# ...manually delete wrong images in ml/data/commons/<brand>/...
+python -I ml/scripts/fetch_commons.py credits                     # regenerate app credits
+```
+
 ## Data rules
 
 - Stanford Cars and CompCars are **non-commercial only**: local experiments only, never used to train a shipped model.
