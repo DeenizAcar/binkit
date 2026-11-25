@@ -79,4 +79,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get privacyNote =>
       'Plates are masked on your device. Nothing is saved or sent.';
+
+  @override
+  String get creditsTitle => 'Credits & licenses';
+
+  @override
+  String get creditsDataHeading => 'Training data';
+
+  @override
+  String get creditsOpenImages =>
+      'Plate detection is trained on the Open Images Dataset V7 by Google. Annotations: CC BY 4.0. Images: CC BY 2.0, by their Flickr authors.';
+
+  @override
+  String get creditsCommons =>
+      'Car recognition is trained partly on photos from Wikimedia Commons (public domain, CC0 and CC BY only). Photographers are listed below.';
+
+  @override
+  String get creditsOpenSource => 'Open-source licenses';
+
+  @override
+  String get creditsPhotosHeading => 'Photo credits';
+
+  @override
+  String get creditsNoPhotos => 'No photo credits yet.';
 }

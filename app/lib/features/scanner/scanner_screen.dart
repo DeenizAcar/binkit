@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../credits/credits_screen.dart';
 import '../result/result_screen.dart';
 import 'frame_converter.dart';
 import 'scan_pipeline.dart';
@@ -205,10 +206,26 @@ class _ScannerScreenState extends State<ScannerScreen>
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _Banner(
-                  title: _message ?? l10n.aimHint,
-                  subtitle: _hint,
-                  emphasized: _message != null,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _Banner(
+                        title: _message ?? l10n.aimHint,
+                        subtitle: _hint,
+                        emphasized: _message != null,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      tooltip: l10n.creditsTitle,
+                      icon: const Icon(Icons.info_outline),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                            builder: (_) => const CreditsScreen()),
+                      ),
+                    ),
+                  ],
                 ),
                 const Spacer(),
                 _ScanButton(

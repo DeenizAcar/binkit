@@ -21,5 +21,12 @@
   "priceUnavailable": "Henüz fiyat verisi yok",
   "priceDisclaimer": "Tipik ikinci el araçlar için kaba bir aralık. Ekspertiz değildir.",
   "scanAgain": "Tekrar tara",
-  "privacyNote": "Plakalar cihazında maskelenir. Hiçbir şey kaydedilmez veya gönderilmez."
+  "privacyNote": "Plakalar cihazında maskelenir. Hiçbir şey kaydedilmez veya gönderilmez.",
+  "creditsTitle": "Emeği geçenler ve lisanslar",
+  "creditsDataHeading": "Eğitim verisi",
+  "creditsOpenImages": "Plaka tespiti, Google'ın Open Images Dataset V7 verisiyle eğitildi. Etiketler: CC BY 4.0. Görseller: CC BY 2.0, Flickr'daki sahiplerine ait.",
+  "creditsCommons": "Araba tanıma kısmen Wikimedia Commons fotoğraflarıyla eğitildi (yalnızca kamu malı, CC0 ve CC BY). Fotoğrafçılar aşağıda listelenmiştir.",
+  "creditsOpenSource": "Açık kaynak lisansları",
+  "creditsPhotosHeading": "Fotoğraf kaynakları",
+  "creditsNoPhotos": "Henüz fotoğraf kaynağı yok."
 }

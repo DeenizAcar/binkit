@@ -80,4 +80,27 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get privacyNote =>
       'Plakalar cihazında maskelenir. Hiçbir şey kaydedilmez veya gönderilmez.';
+
+  @override
+  String get creditsTitle => 'Emeği geçenler ve lisanslar';
+
+  @override
+  String get creditsDataHeading => 'Eğitim verisi';
+
+  @override
+  String get creditsOpenImages =>
+      'Plaka tespiti, Google\'ın Open Images Dataset V7 verisiyle eğitildi. Etiketler: CC BY 4.0. Görseller: CC BY 2.0, Flickr\'daki sahiplerine ait.';
+
+  @override
+  String get creditsCommons =>
+      'Araba tanıma kısmen Wikimedia Commons fotoğraflarıyla eğitildi (yalnızca kamu malı, CC0 ve CC BY). Fotoğrafçılar aşağıda listelenmiştir.';
+
+  @override
+  String get creditsOpenSource => 'Açık kaynak lisansları';
+
+  @override
+  String get creditsPhotosHeading => 'Fotoğraf kaynakları';
+
+  @override
+  String get creditsNoPhotos => 'Henüz fotoğraf kaynağı yok.';
 }

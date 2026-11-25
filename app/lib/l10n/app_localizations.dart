@@ -229,6 +229,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plates are masked on your device. Nothing is saved or sent.'**
   String get privacyNote;
+
+  /// No description provided for @creditsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Credits & licenses'**
+  String get creditsTitle;
+
+  /// No description provided for @creditsDataHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Training data'**
+  String get creditsDataHeading;
+
+  /// No description provided for @creditsOpenImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Plate detection is trained on the Open Images Dataset V7 by Google. Annotations: CC BY 4.0. Images: CC BY 2.0, by their Flickr authors.'**
+  String get creditsOpenImages;
+
+  /// No description provided for @creditsCommons.
+  ///
+  /// In en, this message translates to:
+  /// **'Car recognition is trained partly on photos from Wikimedia Commons (public domain, CC0 and CC BY only). Photographers are listed below.'**
+  String get creditsCommons;
+
+  /// No description provided for @creditsOpenSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source licenses'**
+  String get creditsOpenSource;
+
+  /// No description provided for @creditsPhotosHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo credits'**
+  String get creditsPhotosHeading;
+
+  /// No description provided for @creditsNoPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'No photo credits yet.'**
+  String get creditsNoPhotos;
 }
 
 class _AppLocalizationsDelegate
