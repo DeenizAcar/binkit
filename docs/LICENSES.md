@@ -12,6 +12,8 @@ Not allowed: AGPL / GPL (this rules out Ultralytics YOLOv5/v8/v11 and their deri
 | [camera](https://pub.dev/packages/camera) | ^0.12.0+2 | BSD-3-Clause | Camera preview and frame capture (Android: CameraX) |
 | [tflite_flutter](https://pub.dev/packages/tflite_flutter) | ^0.12.1 | Apache-2.0 | On-device TensorFlow Lite inference (bundles the TFLite runtime, Apache-2.0) |
 | [image](https://pub.dev/packages/image) | ^4.13.1 | MIT | Crop, resize, blur / mask plate regions in memory |
+| [intl](https://pub.dev/packages/intl) | any (0.20.x) | BSD-3-Clause | Number/currency formatting, localization |
+| flutter_localizations (Flutter SDK) | SDK | BSD-3-Clause | English / Turkish UI |
 | [cupertino_icons](https://pub.dev/packages/cupertino_icons) | ^1.0.8 | MIT | Flutter template default |
 
 Transitive dependencies (checked 2026-11-25 from `pubspec.lock`): all BSD, MIT or Apache-2.0. No GPL/AGPL.
